@@ -1,0 +1,72 @@
+UPDATE Membership m
+SET MembershipType = 'Yearly'
+WHERE m.CustomerID IN (
+    SELECT c.CustomerID
+    FROM Customer c
+    JOIN (
+        SELECT p.CustomerID
+        FROM purchase p
+        JOIN BookSales bs ON p.PurchaseID = bs.PurchaseID
+        GROUP BY p.CustomerID
+        HAVING COUNT(*) > 5
+    ) PurchasesCount ON c.CustomerID = PurchasesCount.CustomerID
+);
+
+
+UPDATE worker
+SET Position = 'Manager'
+WHERE WorkerId IN (
+    SELECT w.WorkerId
+    FROM worker w
+    JOIN purchase p ON w.WorkerId = p.WorkerId
+    JOIN BookSales bs ON p.PurchaseID = bs.PurchaseID
+    GROUP BY w.WorkerId
+    ORDER BY COUNT(bs.BookID) DESC
+    FETCH FIRST 3 ROWS ONLY
+);
+
+
+DELETE FROM worker
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM purchase p
+    WHERE p.WorkerId = worker.WorkerId
+);
+
+SELECT *
+FROM worker w
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM purchase p
+    WHERE p.WorkerId = w.WorkerId
+);
+
+
+
+DELETE FROM Book
+WHERE BookID NOT IN (
+    SELECT DISTINCT bc.BookID
+    FROM BookCoppy bc
+    JOIN BookSales bs ON bc.BookID = bs.BookID
+    JOIN purchase p ON bs.PurchaseID = p.PurchaseID
+    WHERE p.PurchaseDate BETWEEN TO_DATE('2021-01-01', 'YYYY-MM-DD') AND TO_DATE('2024-06-01', 'YYYY-MM-DD')
+);
+
+
+DELETE FROM BookSales
+WHERE BookID NOT IN (
+    SELECT DISTINCT bs.BookID
+    FROM BookSales bs
+    JOIN purchase p ON bs.PurchaseID = p.PurchaseID
+    WHERE p.PurchaseDate BETWEEN TO_DATE('2021-01-01', 'YYYY-MM-DD') AND TO_DATE('2024-06-01', 'YYYY-MM-DD')
+);
+
+
+
+DELETE FROM BookCoppy
+WHERE BookID NOT IN (
+    SELECT DISTINCT bs.BookID
+    FROM BookSales bs
+    JOIN purchase p ON bs.PurchaseID = p.PurchaseID
+    WHERE p.PurchaseDate BETWEEN TO_DATE('2021-01-01', 'YYYY-MM-DD') AND TO_DATE('2024-06-01', 'YYYY-MM-DD')
+);

@@ -1,0 +1,30 @@
+SELECT c.CustomerID, c.CustomerFname, c.CustomerLname, c.CustomerPhone, c.CustomerEmail,
+       m.MembershipID, m.StartDate, m.EndDate, m.MembershipType
+FROM Customer c
+JOIN (
+    SELECT p.CustomerID
+    FROM purchase p
+    JOIN BookSales bs ON p.PurchaseID = bs.PurchaseID
+    GROUP BY p.CustomerID
+    HAVING COUNT(*) > 5
+) PurchasesCount ON c.CustomerID = PurchasesCount.CustomerID
+LEFT JOIN Membership m ON c.CustomerID = m.CustomerID;
+
+
+SELECT w.WorkerId, w.WorkerFname, w.WorkerLname, COUNT(bs.BookID) AS TotalItemsSold, w.position
+FROM worker w
+JOIN purchase p ON w.WorkerId = p.WorkerId
+JOIN BookSales bs ON p.PurchaseID = bs.PurchaseID
+GROUP BY w.WorkerId, w.WorkerFname, w.WorkerLname, w.position
+ORDER BY TotalItemsSold DESC
+FETCH FIRST 3 ROWS ONLY;
+
+select * from worker;
+
+SELECT *
+FROM worker w
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM purchase p
+    WHERE p.WorkerId = w.WorkerId
+);
